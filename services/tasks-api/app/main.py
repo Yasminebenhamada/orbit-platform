@@ -1,4 +1,3 @@
-# GitHub Actions test
 import logging
 from contextlib import asynccontextmanager
 from fastapi import FastAPI

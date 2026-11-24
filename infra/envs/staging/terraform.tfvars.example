@@ -1,7 +1,16 @@
-# Copy this file to terraform.tfvars and fill in your own values.
-# terraform.tfvars is gitignored — never commit it if it ever contains anything sensitive.
+# ==============================================================================
+# ORBIT Platform — Terraform Staging Environment Variables Example
+# Copy this file to `terraform.tfvars` and customize with your own settings:
+#   cp terraform.tfvars.example terraform.tfvars
+#
+# NOTE: `terraform.tfvars` is ignored by Git to avoid leaking IPs or local paths.
+# ==============================================================================
 
+# Path to the public SSH key used to log in as `azureuser`
 ssh_public_key_path = "~/.ssh/orbit_vm_key.pub"
 
-# Find your own public IP with: curl -s ifconfig.me
-ssh_allowed_cidrs = ["YOUR_PUBLIC_IP/32"]
+# Whitelisted CIDR ranges allowed to connect to SSH (port 22) and Kubernetes API (port 6443).
+# Security constraint: 0.0.0.0/0 is strictly forbidden by Terraform module validation.
+ssh_allowed_cidrs = [
+  "198.51.100.42/32" # Replace with your current workstation's public IP in CIDR format
+]

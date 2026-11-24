@@ -1,13 +1,26 @@
-tasks-api has been deployed.
+tasks-api has been deployed successfully.
 
-Service:
-  {{ .Release.Name }}:{{ .Values.service.port }}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+⚠  PREREQUISITE — create the database secret first
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+This chart expects a pre-existing secret named "{{ .Values.database.existingSecret }}".
+If you have not created it yet, run:
 
-Ingress:
-  http://{{ .Values.ingress.host }}{{ .Values.ingress.path }}
+  kubectl create secret generic {{ .Values.database.existingSecret }} \
+    --namespace {{ .Release.Namespace }} \
+    --from-literal=password=<your-db-password>
 
-Check the deployment:
-  kubectl get pods -n {{ .Release.Namespace }} -l app.kubernetes.io/instance={{ .Release.Name }}
+The password is never stored in values.yaml or Helm release history.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Check the service:
-  kubectl get svc -n {{ .Release.Namespace }} {{ .Release.Name }}
+Endpoints:
+  Service : {{ .Release.Name }}.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.service.port }}
+  Ingress : http://{{ .Values.ingress.host }}{{ .Values.ingress.path }}
+  Docs    : http://{{ .Values.ingress.host }}/docs
+
+Useful commands:
+  kubectl get pods  -n {{ .Release.Namespace }} -l app.kubernetes.io/instance={{ .Release.Name }}
+  kubectl get svc   -n {{ .Release.Namespace }} {{ .Release.Name }}
+  kubectl logs -n {{ .Release.Namespace }} -l app.kubernetes.io/instance={{ .Release.Name }} --tail=50
+  helm history {{ .Release.Name }} -n {{ .Release.Namespace }}
+  helm rollback {{ .Release.Name }} -n {{ .Release.Namespace }}

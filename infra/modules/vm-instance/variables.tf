@@ -9,14 +9,15 @@ variable "environment" {
 }
 
 variable "location" {
-  type    = string
-  default = "francecentral"
+  description = "Azure region where resources are provisioned."
+  type        = string
+  default     = "swedencentral"
 }
 
 variable "vm_size" {
-  description = "Standard_B2ms (2 vCPU / 8 GiB) is comfortable for k3s, ArgoCD and two apps."
+  description = "Standard_B2s_v2 (2 vCPU / 4 GiB) is optimal for k3s, ArgoCD and microservices under Azure for Students quota."
   type        = string
-  default     = "Standard_B2ms"
+  default     = "Standard_B2s_v2"
 }
 
 variable "os_disk_size_gb" {

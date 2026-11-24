@@ -1,4 +1,3 @@
-// GitHub Actions test
 package com.orbit.internsapi;
 
 import org.springframework.boot.SpringApplication;
@@ -11,5 +10,3 @@ public class InternsApiApplication {
         SpringApplication.run(InternsApiApplication.class, args);
     }
 }
-// test workflow
-// test comment

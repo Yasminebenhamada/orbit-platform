@@ -1,4 +1,4 @@
-# ORBIT Platform
+﻿# ORBIT Platform
 
 A complete DevOps and Platform Engineering project that answers one fundamental question:
 
@@ -49,65 +49,17 @@ This philosophy shapes every practice in the project.
 ```
 orbit-platform/
 │
-├── services/                          # Application code
-│   ├── interns-api/                   # Java/Spring Boot REST API
-│   │   ├── src/main/java/            # Application source
-│   │   ├── src/test/java/            # JUnit 5 tests
-│   │   ├── Dockerfile                # Multi-stage container build
-│   │   ├── pom.xml                   # Maven dependencies
-│   │
-│   └── tasks-api/                     # Python/FastAPI REST API
-│       ├── app/                       # Application source
-│       ├── tests/                     # pytest test suite
-│       ├── Dockerfile                # Optimised Python image
-│       ├── requirements.txt           # Dependencies
-│       ├── requirements-dev.txt       # Dev dependencies
-│
-├── charts/                            # Kubernetes deployment configuration (Helm)
-│   ├── interns-api/
-│   │   ├── Chart.yaml                # Chart metadata
-│   │   ├── values.yaml               # Default configuration
-│   │   └── templates/                # K8s object templates
-│   │       ├── deployment.yaml
-│   │       ├── service.yaml
-│   │       ├── ingress.yaml
-│   │       ├── configmap.yaml
-│   │       └── secret.yaml
-│   │
-│   └── tasks-api/                     # Same structure
-│       ├── Chart.yaml
-│       ├── values.yaml
-│       └── templates/
-│
-├── k8s/                               # Raw Kubernetes YAML (learning reference)
-│   ├── interns-api-deployment.yaml
-│   ├── interns-api-service.yaml
-│   ├── tasks-api-deployment.yaml
-│   ├── tasks-api-service.yaml
-│   ├── postgres-*.yaml               # Database manifests
-│
-├── argocd/                            # GitOps declarations
-│   ├── project.yaml                  # AppProject (least privilege)
-│   ├── interns-api.yaml              # Application manifest
-│   └── tasks-api.yaml                # Application manifest
-│
-├── .github/workflows/                 # CI/CD automation
-│   ├── ci-interns-api.yml            # Test → build → scan → push → update
-│   ├── ci-tasks-api.yml              # Same for tasks-api
-│   └── terraform-plan.yml            # Infrastructure validation (optional)
-│
-├── docker-compose.yml                # Local development stack
-├── .env.example                      # Environment template
-├── .gitignore                        # Git exclusions
-├── README.md                         # This file
-
-
----
-
-## Quick Start (Local, < 10 min)
-
-### Prerequisites
-
+├── services/         +--------------------------------------------------+
+         | Azure VM (or any Kubernetes cluster)             |
+         | +----------------------------------------------+ |
+         | | k3s Kubernetes Cluster                       | |
+         | |                                              | |
+         | |  ArgoCD (Watches Git and self-heals)         | |
+         | |   |--> interns-api                           | |
+         | |   |--> tasks-api                             | |
+         | |   --> postgresql                            | |
+         | +----------------------------------------------+ |
+         +--------------------------------------------------+
 ```bash
 # Check what you need
 docker --version        # Docker 20.10+
@@ -374,13 +326,20 @@ docker compose down        # Clean shutdown
 helm lint charts/interns-api
 helm lint charts/tasks-api
 
-# See what would actually be deployed
+# See what would actually be deployed (renders YAML without touching the cluster)
 helm template interns-api charts/interns-api
 
-# Try deploying to a local cluster
+# Deploy to a local cluster
 k3d cluster create orbit
 helm install interns-api charts/interns-api --namespace orbit --create-namespace
 kubectl port-forward -n orbit svc/interns-api 8080:8080
+
+# Upgrade an existing release
+helm upgrade --install interns-api charts/interns-api --namespace orbit
+
+# Roll back to a previous revision if something goes wrong
+helm rollback interns-api 1 --namespace orbit
+# (use \helm history interns-api -n orbit\ to find the revision number)
 ```
 
 **Key learnings:**
@@ -392,15 +351,79 @@ kubectl port-forward -n orbit svc/interns-api 8080:8080
 
 ---
 
-### Phase 3: Infrastructure as Code ⏭️
+### Phase 3: Infrastructure as Code
 
-**Skipped per request**, but available in `infra/` if needed:
-- Terraform module that creates an Azure VM
-- cloud-init script that installs k3s on first boot
-- All infrastructure as declarative code
+**What's here:** `infra/`
+
+- **`modules/vm-instance/`** — Reusable Terraform module that creates the Azure infrastructure and bootstraps k3s via cloud-init.
+- **`envs/staging/`** — Staging environment composition instantiating the module.
+- **`cloud-init/k3s-server.yaml.tftpl`** — Bootstrap template: installs k3s, configures `tls-san` with the VM's static public IP, and enables fail2ban.
+
+#### Module Inputs & Outputs
+
+**Inputs (`infra/modules/vm-instance/variables.tf`):**
+
+| Name | Type | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `name` | `string` | — | Prefix applied to all provisioned Azure resources |
+| `ssh_public_key` | `string` | — | Admin user SSH public key contents |
+| `ssh_allowed_cidrs` | `list(string)` | — | Whitelisted CIDRs for SSH (22) and Kube API (6443). **Validated: cannot be 0.0.0.0/0** |
+| `environment` | `string` | `"staging"` | Environment tag and name suffix |
+| `location` | `string` | `"francecentral"` | Azure region |
+| `vm_size` | `string` | `"Standard_B2ms"` | VM SKU (2 vCPU, 8 GiB RAM) |
+| `os_disk_size_gb` | `number` | `32` | OS disk capacity in GB |
+| `admin_username` | `string` | `"azureuser"` | Non-root admin username |
+| `k3s_version` | `string` | `"v1.30.3+k3s1"` | k3s distribution version |
+
+**Outputs (`infra/modules/vm-instance/outputs.tf`):**
+
+| Name | Description |
+| :--- | :--- |
+| `public_ip` | Static public IP address assigned to the VM |
+| `vm_name` | Name of the provisioned Azure virtual machine |
+| `resource_group_name` | Azure Resource Group containing all resources |
+| `ssh_connection_string` | Ready-to-use SSH connection command (`ssh azureuser@<public_ip>`) |
+
+#### Verification:
+```bash
+cd infra/envs/staging
+
+terraform init
+terraform fmt -check -recursive   # fails if formatting is off
+terraform validate                 # catches syntax errors before touching Azure
+terraform plan                     # shows exactly what will be created
+
+# Provision when ready:
+terraform apply
+
+# When done, cleanly tear down:
+terraform destroy
+```
+
+#### State Management:
+
+Terraform records what it created in a state file (`terraform.tfstate`).
+During development, state lives locally — **never commit this file**, as it contains secrets in plain text (enforced by `.gitignore`).
+
+For shared environments, migrate to the Azure Blob remote backend with native blob lease locking to prevent concurrent apply collisions:
+
+```bash
+# Create the state storage account once (out-of-band):
+az group create --name rg-tfstate --location swedencentral
+az storage account create --name sttfstateorbit26 --resource-group rg-tfstate --sku Standard_LRS --min-tls-version TLS1_2 --allow-blob-public-access false
+az storage container create --name tfstate --account-name sttfstateorbit26 --auth-mode login
+```
+
+Then uncomment the `backend "azurerm"` block in `infra/envs/staging/main.tf` and run `terraform init -migrate-state`.
+
+**Key learnings:**
+- Declarative infrastructure: running `apply` twice produces zero drift
+- The `init` / `fmt` / `validate` / `plan` / `apply` / `destroy` lifecycle
+- Policy enforcement in code (CIDR validation preventing open internet access)
+- Dynamic cloud-init templating via `templatefile()`
+- Remote state locking and protection against secret leakage
 
 ---
-
 ### Phase 4: GitOps & Automation ✅
 
 **Goal:** Set up automatic deployment from Git.

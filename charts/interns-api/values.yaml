@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 ﻿replicaCount: 3
+=======
+replicaCount: 1
+>>>>>>> bb4bf4c (feat: complete orbit platform with full k8s, helm, terraform and ci/cd alignment)
 
 image:
   repository: ghcr.io/yasmine-bh/orbit-platform/interns-api
@@ -30,26 +34,22 @@ resources:
     cpu: 100m
     memory: 256Mi
 
+# Kubernetes splits liveness (is the process alive?) from readiness (is it ready for traffic?).
+# Spring Boot Actuator exposes dedicated endpoints for each when probes.enabled=true.
 livenessProbe:
   enabled: true
-  path: /actuator/health
+  path: /actuator/health/liveness
   initialDelaySeconds: 30
   periodSeconds: 10
 
 readinessProbe:
   enabled: true
-  path: /actuator/health
+  path: /actuator/health/readiness
   initialDelaySeconds: 10
   periodSeconds: 5
 
 configMap:
   enabled: true
-
-ingress:
-  enabled: true
-  className: traefik
-  host: interns.orbit.local
-  path: /api/interns
 
 ingress:
   enabled: true

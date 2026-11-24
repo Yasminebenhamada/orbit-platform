@@ -1,4 +1,4 @@
-﻿replicaCount: 1
+replicaCount: 1
 
 image:
   repository: ghcr.io/yasmine-bh/orbit-platform/tasks-api
@@ -31,26 +31,22 @@ resources:
     cpu: 100m
     memory: 256Mi
 
+# tasks-api exposes dedicated liveness and readiness endpoints in main.py.
+# Using the split paths matches what Kubernetes expects from each probe type.
 livenessProbe:
   enabled: true
-  path: /health
+  path: /health/live
   initialDelaySeconds: 30
   periodSeconds: 10
 
 readinessProbe:
   enabled: true
-  path: /health
+  path: /health/ready
   initialDelaySeconds: 10
   periodSeconds: 5
 
 configMap:
   enabled: true
-
-ingress:
-  enabled: true
-  className: traefik
-  host: tasks.orbit.local
-  path: /api/tasks
 
 ingress:
   enabled: true

@@ -1,0 +1,18 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: interns-api
+  namespace: orbit
+spec:
+  ingressClassName: traefik
+  rules:
+  - host: interns.orbit.local
+    http:
+      paths:
+      - path: /api/interns
+        pathType: Prefix
+        backend:
+          service:
+            name: interns-api
+            port:
+              number: 8080

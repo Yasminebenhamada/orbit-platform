@@ -1,4 +1,4 @@
-﻿apiVersion: apps/v1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: postgresql
@@ -33,4 +33,5 @@ spec:
           subPath: postgres
       volumes:
       - name: postgres-storage
-        emptyDir: {}
+        persistentVolumeClaim:
+          claimName: postgres-pvc

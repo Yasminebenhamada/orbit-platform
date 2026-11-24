@@ -1,9 +1,17 @@
+{{- if .Values.configMap.enabled }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: {{ .Release.Name }}-config
   namespace: {{ .Release.Namespace }}
 data:
-  SERVER_PORT: "{{ .Values.config.serverPort }}"
-  JPA_SHOW_SQL: "{{ .Values.config.jpaShowSql }}"
-  JPA_DDL_AUTO: "{{ .Values.config.jpaDdlAuto }}"
+  SERVER_PORT:    {{ .Values.config.serverPort | quote }}
+  JPA_SHOW_SQL:   {{ .Values.config.jpaShowSql | quote }}
+  JPA_DDL_AUTO:   {{ .Values.config.jpaDdlAuto | quote }}
+  # DB connection — host, port, name and user are not sensitive and belong here.
+  # The password is injected via secretKeyRef in the Deployment, never here.
+  DB_HOST: {{ .Values.database.host | quote }}
+  DB_PORT: {{ .Values.database.port | quote }}
+  DB_NAME: {{ .Values.database.name | quote }}
+  DB_USER: {{ .Values.database.user | quote }}
+{{- end }}
