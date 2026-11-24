@@ -7,7 +7,7 @@ spec:
   description: ORBIT platform applications
 
   sourceRepos:
-    - https://github.com/Yasmine-BH/orbit-platform.git
+    - https://github.com/Yasminebenhamada/orbit-platform.git
 
   destinations:
     - server: https://kubernetes.default.svc

@@ -9,7 +9,7 @@ spec:
   project: orbit
 
   source:
-    repoURL: https://github.com/Yasmine-BH/orbit-platform.git
+    repoURL: https://github.com/Yasminebenhamada/orbit-platform.git
     targetRevision: main
     path: charts/tasks-api
     helm:
