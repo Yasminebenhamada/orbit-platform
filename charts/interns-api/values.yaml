@@ -1,8 +1,4 @@
-<<<<<<< HEAD
-﻿replicaCount: 3
-=======
 replicaCount: 1
->>>>>>> bb4bf4c (feat: complete orbit platform with full k8s, helm, terraform and ci/cd alignment)
 
 image:
   repository: ghcr.io/yasmine-bh/orbit-platform/interns-api
