@@ -3,7 +3,7 @@ replicaCount: 1
 image:
   repository: ghcr.io/yasminebenhamada/orbit-platform/interns-api
   pullPolicy: IfNotPresent
-  tag: "cebf6718bcf3c4807ac2e137afd2a5ee2235d87b"
+  tag: "afe9c50db87cca8d36d6f72fe05e6396a0df96c5"
 
 service:
   type: ClusterIP
