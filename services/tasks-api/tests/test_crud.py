@@ -1,7 +1,7 @@
 from datetime import date
 import pytest
 from sqlmodel import Session
-from app.models.task import Task, TaskStatus
+from app.models.task import TaskStatus
 from app.schemas.task import CreateTaskRequest, UpdateTaskRequest
 from app.crud.task import (
     create_task,

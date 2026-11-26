@@ -4,7 +4,6 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session
 from app.config import settings
 from app.dependencies import get_session, get_http_client
-from app.models.task import Task
 from app.schemas.task import CreateTaskRequest, UpdateTaskRequest, TaskResponse
 from app.crud.task import (
     create_task,
@@ -27,7 +26,7 @@ async def create_task_endpoint(
 ) -> TaskResponse:
     """
     Create a new task.
-    
+
     Before creating, validates that the intern exists by calling interns-api.
     This demonstrates service-to-service communication and config from environment.
     """
@@ -55,6 +54,17 @@ async def create_task_endpoint(
 def list_tasks_endpoint(session: Session = Depends(get_session)) -> list[TaskResponse]:
     """List all tasks."""
     tasks = list_tasks(session)
+    return [TaskResponse.from_orm(t) for t in tasks]
+
+
+# NOTE: This route MUST be registered before /{task_id} so that FastAPI
+# does not greedily match "intern" as an integer task_id (which would 422).
+@router.get("/intern/{intern_id}", response_model=list[TaskResponse])
+def list_intern_tasks_endpoint(
+    intern_id: int, session: Session = Depends(get_session)
+) -> list[TaskResponse]:
+    """List all tasks for a specific intern."""
+    tasks = list_tasks_for_intern(session, intern_id)
     return [TaskResponse.from_orm(t) for t in tasks]
 
 
@@ -94,12 +104,3 @@ def delete_task_endpoint(task_id: int, session: Session = Depends(get_session)) 
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Task {task_id} not found",
         )
-
-
-@router.get("/intern/{intern_id}", response_model=list[TaskResponse])
-def list_intern_tasks_endpoint(
-    intern_id: int, session: Session = Depends(get_session)
-) -> list[TaskResponse]:
-    """List all tasks for a specific intern."""
-    tasks = list_tasks_for_intern(session, intern_id)
-    return [TaskResponse.from_orm(t) for t in tasks]

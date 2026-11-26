@@ -48,7 +48,7 @@ jobs:
         id: plan
         run: |
           terraform plan \
-            -var="ssh_allowed_cidrs=[\"0.0.0.0/0\"]" \
+            -var="ssh_allowed_cidrs=[\"192.0.2.1/32\"]" \
             -var="ssh_public_key_path=/dev/null" \
             -no-color \
             -out=tfplan 2>&1 | tee plan_output.txt
